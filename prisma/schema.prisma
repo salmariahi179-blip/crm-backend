@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ClientType {
+  COMPANY
+  PERSON
+}
+
+enum Stage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+model Client {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String?
+  phone         String?
+  type          ClientType
+  companyName   String?
+  taxNumber     String?
+  createdAt     DateTime @default(now())
+
+  opportunities Opportunity[]
+}
+
+model Opportunity {
+  id                 Int      @id @default(autoincrement())
+  title              String
+  amount             Float
+  expectedCloseDate  DateTime
+  stage              Stage
+  createdAt          DateTime @default(now())
+
+  clientId           Int
+  client             Client @relation(fields: [clientId], references: [id])
+}
