@@ -5,8 +5,8 @@ import { DashboardService } from './dashboard.service';
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
-  @Get('pipeline')
-  getPipeline() {
-    return this.dashboardService.getPipeline();
+  @Get()
+  getDashboard() {
+    return this.dashboardService.getStats();
   }
 }
