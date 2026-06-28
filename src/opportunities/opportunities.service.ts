@@ -1,26 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateOpportunityDto } from './dto/create-opportunity.dto';
 import { UpdateOpportunityDto } from './dto/update-opportunity.dto';
 
 @Injectable()
 export class OpportunitiesService {
-  create(createOpportunityDto: CreateOpportunityDto) {
-    return 'This action adds a new opportunity';
+  constructor(private prisma: PrismaService) {}
+
+  async create(dto: CreateOpportunityDto) {
+    return this.prisma.opportunity.create({
+      data: {
+        ...dto,
+        expectedCloseDate: new Date(dto.expectedCloseDate),
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all opportunities`;
+  async findAll(query: any) {
+    const { stage, clientType, page = 1, limit = 10 } = query;
+
+    return this.prisma.opportunity.findMany({
+      where: {
+        stage: stage || undefined,
+        client: clientType ? { type: clientType } : undefined,
+      },
+      include: {
+        client: true,
+      },
+      skip: (page - 1) * limit,
+      take: Number(limit),
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} opportunity`;
+  async findOne(id: string) {
+    const opp = await this.prisma.opportunity.findUnique({
+      where: { id },
+      include: { client: true },
+    });
+
+    if (!opp) {
+      throw new NotFoundException('Opportunity not found');
+    }
+
+    return opp;
   }
 
-  update(id: number, updateOpportunityDto: UpdateOpportunityDto) {
-    return `This action updates a #${id} opportunity`;
+  async update(id: string, dto: UpdateOpportunityDto) {
+    await this.findOne(id);
+
+    return this.prisma.opportunity.update({
+      where: { id },
+      data: {
+        ...dto,
+        expectedCloseDate: dto.expectedCloseDate
+          ? new Date(dto.expectedCloseDate)
+          : undefined,
+      },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} opportunity`;
+  async remove(id: string) {
+    await this.findOne(id);
+
+    return this.prisma.opportunity.delete({
+      where: { id },
+    });
   }
 }
